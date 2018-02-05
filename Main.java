@@ -2,11 +2,12 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Scanner;
 
 
 public class Main {
-    public static Double gaussianBlur(double sigma, int mu, int y){
+    public static double gaussianBlur(double sigma, int mu, int y){
         double result = 1/(sigma * Math.sqrt(2 * Math.PI))* Math.exp(-0.5* (((y - mu) / sigma) * ((y - mu) / sigma)));
         return result;
     }
@@ -30,33 +31,32 @@ public class Main {
         return newImg;
     }
 
-    public static Double blurRadius() {
+    public static double blurRadius() {
         Scanner scan = new Scanner(System.in);
-        Double sig = null;
-        try {
+
+
             System.out.println("Enter sigma value: ");
-            sig = scan.nextDouble();
-        }
-        catch (Exception e) {
-            System.out.println("not a number");
-            System.exit(2);
-        }
+            String input = scan.next().trim();
+            double sig = Double.parseDouble(input);
+
+
         return sig;
     }
 
     public static BufferedImage neighbours(BufferedImage newImg, int x, int y, double sigma){
-        Double blurWidth = 3 * sigma;
+        double blurWidth = 3 * sigma;
         double sumA = 0;
         double sumR = 0;
         double sumG = 0;
         double sumB = 0;
         double counter = 0;
-        if (x - blurWidth >= 0 && x + blurWidth < newImg.getWidth()){
-            for (Double xx = x - blurWidth; xx < blurWidth; xx++) {
-                if (y - blurWidth >= 0 && y + blurWidth < newImg.getHeight()) {
-                    for (Double yy = y - blurWidth; yy < blurWidth; yy++) {
-                        int ixx = xx.intValue();
-                        int iyy = yy.intValue();
+
+        for (double xx = x - blurWidth; xx < x + blurWidth; xx++) {
+            if (xx >= 0 && xx < newImg.getWidth()){
+                for (double yy = y - blurWidth; yy < y + blurWidth; yy++) {
+                    if (yy >= 0 && yy < newImg.getHeight()) {
+                        int ixx = (int)Math.round(xx);
+                        int iyy = (int)Math.round(yy);
                         double gaussX = gaussianBlur(sigma, x, ixx);
                         double gaussY = gaussianBlur(sigma, y, iyy);
                         int alpha = (newImg.getRGB(ixx, iyy) >> 24) & 0xff;
@@ -68,11 +68,14 @@ public class Main {
                         sumG += green * gaussX * gaussY;
                         sumB += blue * gaussX * gaussY;
                         counter += gaussX * gaussY;
-                        System.out.println("red: " + sumR);
-                        System.out.println("gaussianX: " + gaussX);
-                        System.out.println("counter: " + counter);
+                    }
+                    else {
+                        continue;
                     }
                 }
+            }
+            else {
+                continue;
             }
         }
         sumA /= counter;
@@ -86,18 +89,21 @@ public class Main {
     }
 
     public static void main(String[] args){
+        Date begin = new Date();
+        System.out.println(begin.toString());
         BufferedImage img = null;
         try{
             img = ImageIO.read(new File("../test_picture.png"));
         }
         catch (IOException e){
             System.out.println("image not found");
-            e.getStackTrace();
+            System.exit(2);
+
         }
 
         BufferedImage newImg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
         newImg = loopThrough(img, newImg);
-        Double sigma = blurRadius();
+        double sigma = blurRadius();
         System.out.println("processing...");
         for (int x = 0; x < newImg.getWidth(); x++){
             for (int y = 0; y < newImg.getHeight(); y++){
@@ -106,6 +112,8 @@ public class Main {
         }
         save(newImg);
 
+        Date end = new Date();
+        System.out.println(end.toString());
 
         System.out.println("done");
 
